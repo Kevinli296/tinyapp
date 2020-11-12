@@ -1,6 +1,7 @@
 const express = require('express');
 const bodyParser = require('body-parser');
 const cookieParser = require('cookie-parser');
+const bcrypt = require('bcrypt');
 const app = express();
 const PORT = 8080; // default port 8080
 
@@ -45,15 +46,10 @@ const checkForEmail = (input) => {
 const urlsForUser = (id) => {
   let tmp = {};
   for (const url in urlDatabase) {
-    // console.log(`${url} -> shortUrls `);
-    // console.log(`${urlDatabase[url].longURL} -> longUrls`);
-    console.log(`${urlDatabase[url].userID} -> userIDs`);
-    console.log(`${id} -> id`);
     if (urlDatabase[url].userID === id) {
       tmp[url] = { longURL: urlDatabase[url].longURL, userID: id };
     }
   }
-  // console.log(tmp);
   return tmp;
 };
 
@@ -76,8 +72,6 @@ app.get('/urls', (req, res) => {
   if (!req.cookies["user_id"]) {
     res.send('You must login before features of this website are accessible.');
   }
-  // console.log(templateVars);
-  // console.log(urls);
   res.render('urls_index', templateVars);
 });
 
@@ -102,7 +96,10 @@ app.post('/register', (req, res) => {
   }
 
   const newUserID = generateRandomString();
-  users[newUserID] = { id: newUserID, email: req.body.email, password: req.body.password };
+  const password = req.body.password;
+  const hashedPassword = bcrypt.hashSync(password, 10);
+  users[newUserID] = { id: newUserID, email: req.body.email, password: hashedPassword };
+  console.log(users);
   res.cookie('user_id', newUserID);
   res.redirect('/urls');
 });
@@ -135,7 +132,7 @@ app.post('/login', (req, res) => {
     }
   }
 
-  if (foundUser.password !== password) {
+  if (!bcrypt.compareSync(password, foundUser.password)) {
     return res.send('Incorrect password');
   }
 
