@@ -67,7 +67,7 @@ app.get('/urls/new', (req, res) => {
 
 app.get('/register', (req, res) => { 
   const templateVars = { user: users[req.cookies["user_id"]], urls: urlDatabase };
-  res.render('register', templateVars);
+  res.render('urls_register', templateVars);
 });
 
 app.post('/register', (req, res) => {
@@ -93,7 +93,7 @@ app.post('/urls', (req, res) => {
 });
 
 app.get('/login', (req, res) => {
-  res.render('login');
+  res.render('urls_login');
 });
 
 app.post('/login', (req, res) => {
