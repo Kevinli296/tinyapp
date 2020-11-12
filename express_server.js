@@ -72,11 +72,9 @@ app.get('/register', (req, res) => {
 
 app.post('/register', (req, res) => {
   if(req.body.email === '' || req.body.password === '') {
-    res.statusCode = 400;
-    res.send(`${res.statusCode}: BAD REQUEST; NO EMAIL/PASSWORD`);
+    return res.status(400).send('BAD REQUEST: NO EMAIL/PASSWORD');
   } else if (checkForEmail(req.body.email)) {
-    res.statusCode = 400;
-    res.send(`${res.statusCode}: BAD REQUEST; EMAIL EXISTS`);
+    return res.status(400).send('BAD REQUEST: EMAIL EXISTS');
   }
 
   const newUserID = generateRandomString();
@@ -93,12 +91,34 @@ app.post('/urls', (req, res) => {
 });
 
 app.get('/login', (req, res) => {
-  res.render('urls_login');
+  const templateVars = { user: users[req.cookies["user_id"]], urls: urlDatabase };
+  res.render('urls_login', templateVars);
 });
 
 app.post('/login', (req, res) => {
-  const username = req.body.username;
-  res.cookie('username', username);
+  let foundUser = null;
+  const email = req.body.email;
+  const password = req.body.password;
+
+  if(req.body.email === '' || req.body.password === '') {
+    return res.status(400).send('Missing Input')
+  };
+
+  for (const key in users) {
+    if (checkForEmail(email)) {
+      foundUser = users[key];
+    }
+  }
+
+  if (foundUser.password !== password) {
+    return res.send('Incorrect password');
+  }
+
+  if (foundUser === null) {
+    return res.send('no user with that email found');
+  }
+
+  res.cookie("user_id", foundUser.id);
   res.redirect('/urls');
 });
 
