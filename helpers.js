@@ -18,7 +18,8 @@ const getUserByEmail = (email, database) => {
 };
 
 /**
- * Generates a random 6 character alphanumerical string.
+ * Generates a unique alphanumerical ID to be assigned to new users and short URLs.
+ * @return a unique 6 character alphanumerical string.
  */
 
 const generateRandomString = () => {
