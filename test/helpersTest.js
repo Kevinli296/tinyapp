@@ -21,13 +21,13 @@ describe('getUserByEmail', function() {
     assert.equal(user, expectedOutput);
   });
 
-  it('should return not found with empty email', function() {
+  it('should return undefined with no email argument', function() {
     const user = getUserByEmail("", testUsers)
     const expectedOutput = undefined;
     assert.equal(user, expectedOutput);
   });
 
-  it('should return not found', function() {
+  it('should return undefined when email does not exist', function() {
     const user = getUserByEmail("idontexist@example.com", testUsers)
     const expectedOutput = undefined;
     assert.equal(user, expectedOutput);
