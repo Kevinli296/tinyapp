@@ -1,31 +1,12 @@
 // Node dependencies/exports ----------------------------
-const { getUserByEmail, generateRandomString, urlsForUser, checkMatchingUser, urlDatabase, users } = require('./helpers');
+
+const { getUserByEmail, generateRandomString, urlsForUser, urlDatabase, users } = require('./helpers');
 const express = require('express');
 const bodyParser = require('body-parser');
 const cookieSession = require('cookie-session');
 const bcrypt = require('bcrypt');
 const app = express();
 const PORT = 8080; // default port 8080
-
-// Data -------------------------------------------------
-
-// const urlDatabase = {
-//   b6UTxQ: { longURL: "https://www.tsn.ca", userID: "userRandomID" },
-//   i3BoGr: { longURL: "https://www.google.ca", userID: "aJ48lW" }
-// };
-
-// const users = {
-//   "userRandomID": {
-//     id: "userRandomID",
-//     email: "user@example.com",
-//     password: "1234aa"
-//   },
-//   "user2RandomID": {
-//     id: "user2RandomID",
-//     email: "user2@example.com",
-//     password: "dishwasher-funk"
-//   }
-// };
 
 // Dependencies to be used ------------------------------
 
@@ -35,54 +16,20 @@ app.use(cookieSession({
   keys: ['YEET']
 }));
 
-// Functions --------------------------------------------
-
-// const generateRandomString = () => {
-//   let result = '';
-//   let alphanumeric = 'ABCDEFGHIKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'.split('');
-
-//   for (let i = 0; i < 6; i++) {
-//     let random = (Math.round(Math.random() * (alphanumeric.length - 1)));
-//     result += alphanumeric[random];
-//   }
-//   return result;
-// };
-
-// const urlsForUser = (id) => {
-//   let tmp = {};
-//   for (const url in urlDatabase) {
-//     if (urlDatabase[url].userID === id) {
-//       tmp[url] = { longURL: urlDatabase[url].longURL, userID: id };
-//     }
-//   }
-//   return tmp;
-// };
-
 // Setting view engine ----------------------------------
 
 app.set('view engine', 'ejs');
 
 // Routes -----------------------------------------------
 
-app.get('/', (req, res) => {
-  res.send("Hello!");
-});
-
-app.get('/urls.json', (req, res) => {
-  res.json(urlDatabase);
-});
-
 app.get('/urls', (req, res) => {
   const urls = urlsForUser(req.session["user_id"]);
   const templateVars = { user: users[req.session["user_id"]], urls: urls};
-  if (!req.session["user_id"]) {
-    return res.send('You must login before features of this website are accessible.');
-  }
   res.render('urls_index', templateVars);
 });
 
 app.get('/urls/new', (req, res) => {
-  const templateVars = { user: users[req.session["user_id"]], urls: urlDatabase };
+  const templateVars = { user: users[req.session["user_id"]] };
   if (!users[req.session["user_id"]]) {
     return res.redirect('/urls');
   }
@@ -90,7 +37,7 @@ app.get('/urls/new', (req, res) => {
 });
 
 app.get('/register', (req, res) => {
-  const templateVars = { user: users[req.session["user_id"]], urls: urlDatabase };
+  const templateVars = { user: users[req.session["user_id"]] };
   res.render('urls_register', templateVars);
 });
 
@@ -109,7 +56,7 @@ app.post('/register', (req, res) => {
 
   const newUserID = generateRandomString();
   const hashedPassword = bcrypt.hashSync(password, 10);
-  users[newUserID] = { id: newUserID, email: req.body.email, password: hashedPassword };
+  users[newUserID] = { id: newUserID, email: email, password: hashedPassword };
   req.session["user_id"] = newUserID;
   res.redirect('/urls');
 });
@@ -123,7 +70,7 @@ app.post('/urls', (req, res) => {
 });
 
 app.get('/login', (req, res) => {
-  const templateVars = { user: users[req.session["user_id"]], urls: urlDatabase };
+  const templateVars = { user: users[req.session["user_id"]] };
   res.render('urls_login', templateVars);
 });
 
@@ -160,17 +107,19 @@ app.post('/logout', (req, res) => {
 });
 
 app.post('/urls/:shortURL/delete', (req, res) => {
-  if (checkMatchingUser(req.session["user_id"], urlDatabase[req.params.shortURL].longURL, urlDatabase)) {
+  const databaseUserID = urlDatabase[req.params.shortURL].userID;
+  const sessionID = req.session["user_id"];
+  if (databaseUserID === sessionID) {
     delete urlDatabase[req.params .shortURL];
     return res.redirect('/urls');
   } else {
-    res.send('BAD REQUEST: NICE TRY :)');
+    return res.status(400).send('BAD REQUEST: NICE TRY :)');
   }
 });
 
 app.post('/urls/:shortURL', (req, res) => {
-    urlDatabase[req.params.shortURL].longURL = req.body.longURL;
-    return res.redirect('/urls');
+  urlDatabase[req.params.shortURL].longURL = req.body.longURL;
+  return res.redirect('/urls');
 });
 
 app.get('/u/:shortURL', (req, res) => {
@@ -179,18 +128,19 @@ app.get('/u/:shortURL', (req, res) => {
 });
 
 app.get('/urls/:shortURL', (req, res) => {
-  if (checkMatchingUser(req.session["user_id"], urlDatabase[req.params.shortURL].longURL, urlDatabase)) {
-  const templateVars = { user: users[req.session["user_id"]], shortURL: req.params.shortURL, longURL: urlDatabase[req.params.shortURL] };
-  res.render('urls_show', templateVars);
+  const databaseUserID = urlDatabase[req.params.shortURL].userID;
+  const sessionID = req.session["user_id"];
+  if (databaseUserID === sessionID) {
+    const templateVars = {
+      user: users[req.session["user_id"]],
+      shortURL: req.params.shortURL,
+      longURL: urlDatabase[req.params.shortURL]
+    };
+    res.render('urls_show', templateVars);
   } else {
     res.send('BAD REQUEST: NICE TRY :)');
   }
 
-});
-
-
-app.get('/hello', (req, res) => {
-  res.send('<html><body>Hello <b>World</b></body></html>\n');
 });
 
 app.listen(PORT, () => {

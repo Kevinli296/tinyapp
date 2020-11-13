@@ -1,50 +1,60 @@
-// Helper functions -------------------------------------
+// Helper functions ------------------------------------
+/**
+ * Gets a user based on an email and database input.
+ *
+ * @param email an email input value to check for.
+ * @param db a user database that we search through.
+ * @return a user that corresponds to the email input.
+ */
+
 const getUserByEmail = (email, database) => {
-    let user;
-    for (const key in database) {
-      if(database[key].email === email) {
-          user = key;
+  let user;
+  for (const key in database) {
+    if (database[key].email === email) {
+      user = key;
     }
   }
   return user;
-}
-
-const generateRandomString = () => {
-    let result = '';
-    let alphanumeric = 'ABCDEFGHIKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'.split('');
-  
-    for (let i = 0; i < 6; i++) {
-      let random = (Math.round(Math.random() * (alphanumeric.length - 1)));
-      result += alphanumeric[random];
-    }
-    return result;
-  };
-
-const urlsForUser = (id) => {
-  let tmp = {};
-  for (const url in urlDatabase) {
-    if (urlDatabase[url].userID === id) {
-      tmp[url] = { longURL: urlDatabase[url].longURL, userID: id };
-    }
-  }
-  return tmp;
 };
 
-const checkMatchingUser = (id, url, database) => {
-    let boolean = false;
-  for (const key in database) {
-    if ((database[key].userID === id) && (database[key].longURL === url)) {
-      boolean = true;
+/**
+ * Generates a random 6 character alphanumerical string.
+ */
+
+const generateRandomString = () => {
+  let result = '';
+  let alphanumeric = 'ABCDEFGHIKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'.split('');
+
+  for (let i = 0; i < 6; i++) {
+    let random = (Math.round(Math.random() * (alphanumeric.length - 1)));
+    result += alphanumeric[random];
+  }
+  return result;
+};
+
+/**
+*
+* Generates a URLs object for the corresponding user ID to be displayed/modified on login.
+* @param id a userID to check for within urlDatabase.
+* @return a URLs object containing the URLs that correspond to the matching userID.
+*/
+
+const urlsForUser = (id) => {
+  let URLs = {};
+  for (const url in urlDatabase) {
+    if (urlDatabase[url].userID === id) {
+      URLs[url] = { longURL: urlDatabase[url].longURL, userID: id };
     }
   }
-  return boolean;
-}
+  return URLs;
+};
 
-//Data --------------------------------------------------
+// Data -------------------------------------------------
+
 const urlDatabase = {
-    b6UTxQ: { longURL: "https://www.tsn.ca", userID: "userRandomID" },
-    i3BoGr: { longURL: "https://www.google.ca", userID: "aJ48lW" }
-  };  
+  b6UTxQ: { longURL: "https://www.tsn.ca", userID: "userRandomID" },
+  i3BoGr: { longURL: "https://www.google.ca", userID: "aJ48lW" }
+};
 
 const users = {
   "userRandomID": {
@@ -59,4 +69,6 @@ const users = {
   }
 };
 
-module.exports = { getUserByEmail, generateRandomString, urlsForUser, checkMatchingUser, urlDatabase, users};
+// Modules to be exported -------------------------------
+
+module.exports = { getUserByEmail, generateRandomString, urlsForUser, urlDatabase, users };
