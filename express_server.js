@@ -1,4 +1,5 @@
-// Node dependencies ------------------------------------
+// Node dependencies/exports ----------------------------
+const { getUserByEmail, generateRandomString, urlsForUser, checkMatchingUser, urlDatabase, users } = require('./helpers');
 const express = require('express');
 const bodyParser = require('body-parser');
 const cookieSession = require('cookie-session');
@@ -8,23 +9,23 @@ const PORT = 8080; // default port 8080
 
 // Data -------------------------------------------------
 
-const urlDatabase = {
-  b6UTxQ: { longURL: "https://www.tsn.ca", userID: "userRandomID" },
-  i3BoGr: { longURL: "https://www.google.ca", userID: "aJ48lW" }
-};
+// const urlDatabase = {
+//   b6UTxQ: { longURL: "https://www.tsn.ca", userID: "userRandomID" },
+//   i3BoGr: { longURL: "https://www.google.ca", userID: "aJ48lW" }
+// };
 
-const users = {
-  "userRandomID": {
-    id: "userRandomID",
-    email: "user@example.com",
-    password: "1234aa"
-  },
-  "user2RandomID": {
-    id: "user2RandomID",
-    email: "user2@example.com",
-    password: "dishwasher-funk"
-  }
-};
+// const users = {
+//   "userRandomID": {
+//     id: "userRandomID",
+//     email: "user@example.com",
+//     password: "1234aa"
+//   },
+//   "user2RandomID": {
+//     id: "user2RandomID",
+//     email: "user2@example.com",
+//     password: "dishwasher-funk"
+//   }
+// };
 
 // Dependencies to be used ------------------------------
 
@@ -36,35 +37,26 @@ app.use(cookieSession({
 
 // Functions --------------------------------------------
 
-const generateRandomString = () => {
-  let result = '';
-  let alphanumeric = 'ABCDEFGHIKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'.split('');
+// const generateRandomString = () => {
+//   let result = '';
+//   let alphanumeric = 'ABCDEFGHIKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'.split('');
 
-  for (let i = 0; i < 6; i++) {
-    let random = (Math.round(Math.random() * (alphanumeric.length - 1)));
-    result += alphanumeric[random];
-  }
-  return result;
-};
+//   for (let i = 0; i < 6; i++) {
+//     let random = (Math.round(Math.random() * (alphanumeric.length - 1)));
+//     result += alphanumeric[random];
+//   }
+//   return result;
+// };
 
-const checkForEmail = (input) => {
-  for (const keys in users) {
-    if (users[keys].email === input) {
-      return true;
-    }
-  }
-  return false;
-};
-
-const urlsForUser = (id) => {
-  let tmp = {};
-  for (const url in urlDatabase) {
-    if (urlDatabase[url].userID === id) {
-      tmp[url] = { longURL: urlDatabase[url].longURL, userID: id };
-    }
-  }
-  return tmp;
-};
+// const urlsForUser = (id) => {
+//   let tmp = {};
+//   for (const url in urlDatabase) {
+//     if (urlDatabase[url].userID === id) {
+//       tmp[url] = { longURL: urlDatabase[url].longURL, userID: id };
+//     }
+//   }
+//   return tmp;
+// };
 
 // Setting view engine ----------------------------------
 
@@ -103,14 +95,19 @@ app.get('/register', (req, res) => {
 });
 
 app.post('/register', (req, res) => {
-  if (req.body.email === '' || req.body.password === '') {
-    return res.status(400).send('BAD REQUEST: NO EMAIL/PASSWORD');
-  } else if (checkForEmail(req.body.email)) {
-    return res.status(400).send('BAD REQUEST: EMAIL EXISTS');
+  const email = req.body.email;
+  const password = req.body.password;
+  if (email === '' || password === '') {
+    return res.status(400).send('BAD REQUEST: MISSING INPUT');
+  }
+
+  for (const key in users) {
+    if (getUserByEmail(email, users) === key) {
+      return res.status(400).send('BAD REQUEST: EMAIL EXISTS');
+    }
   }
 
   const newUserID = generateRandomString();
-  const password = req.body.password;
   const hashedPassword = bcrypt.hashSync(password, 10);
   users[newUserID] = { id: newUserID, email: req.body.email, password: hashedPassword };
   req.session["user_id"] = newUserID;
@@ -136,21 +133,21 @@ app.post('/login', (req, res) => {
   const password = req.body.password;
 
   if (req.body.email === '' || req.body.password === '') {
-    return res.status(400).send('Missing Input');
+    return res.status(400).send('BAD REQUEST: MISSING INPUT');
   }
 
   for (const key in users) {
-    if (checkForEmail(email)) {
+    if (getUserByEmail(email, users) === key) {
       foundUser = users[key];
     }
   }
 
-  if (!bcrypt.compareSync(password, foundUser.password)) {
-    return res.send('Incorrect password');
+  if (foundUser === null) {
+    return res.send('BAD REQUEST: NO USER WITH THAT EMAIL FOUND');
   }
 
-  if (foundUser === null) {
-    return res.send('no user with that email found');
+  if (!bcrypt.compareSync(password, foundUser.password)) {
+    return res.send('BAD REQUEST: INCORRECT PASSWORD');
   }
 
   req.session["user_id"] = foundUser.id;
@@ -163,17 +160,17 @@ app.post('/logout', (req, res) => {
 });
 
 app.post('/urls/:shortURL/delete', (req, res) => {
-  if (req.session["user_id"]) {
+  if (checkMatchingUser(req.session["user_id"], urlDatabase[req.params.shortURL].longURL, urlDatabase)) {
     delete urlDatabase[req.params .shortURL];
     return res.redirect('/urls');
+  } else {
+    res.send('BAD REQUEST: NICE TRY :)');
   }
 });
 
 app.post('/urls/:shortURL', (req, res) => {
-  if (req.session["user_id"]) {
-    urlDatabase[req.params.shortURL] = req.body.longURL;
+    urlDatabase[req.params.shortURL].longURL = req.body.longURL;
     return res.redirect('/urls');
-  }
 });
 
 app.get('/u/:shortURL', (req, res) => {
@@ -182,8 +179,13 @@ app.get('/u/:shortURL', (req, res) => {
 });
 
 app.get('/urls/:shortURL', (req, res) => {
+  if (checkMatchingUser(req.session["user_id"], urlDatabase[req.params.shortURL].longURL, urlDatabase)) {
   const templateVars = { user: users[req.session["user_id"]], shortURL: req.params.shortURL, longURL: urlDatabase[req.params.shortURL] };
   res.render('urls_show', templateVars);
+  } else {
+    res.send('BAD REQUEST: NICE TRY :)');
+  }
+
 });
 
 
@@ -195,4 +197,4 @@ app.listen(PORT, () => {
   console.log(`Example app listening on port ${PORT}!`);
 });
 
-// ---------------------------------------------------------------------
+// --------------------------------------------------------------------
