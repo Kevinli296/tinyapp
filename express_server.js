@@ -18,11 +18,14 @@ app.use(cookieSession({
   keys: ['YEET']
 }));
 
-// Setting view engine ----------------------------------
 
+// Sets the view engine for rendering
 app.set('view engine', 'ejs');
 
-// Routes -----------------------------------------------
+// Makes a GET request to the root '/' which redirects you to view the homepage.
+app.get('/', (req, res) => {
+  res.redirect('/urls');
+});
 
 // Makes a GET request to view the homepage.
 app.get('/urls', (req, res) => {
@@ -57,9 +60,8 @@ app.post('/register', (req, res) => {
     return res.status(400).send('Invalid input.');
   }
 
-  for (const key in users) {
-    if (getUserByEmail(email, users) === key) {
-      // If the user is attempting to register a new account with an existing email, returns a vague error message.
+  for (const user in users) {
+    if (getUserByEmail(email, users) === user) {
       return res.status(400).send('Invalid input.');
     }
   }
@@ -67,10 +69,9 @@ app.post('/register', (req, res) => {
   const newUserID = generateRandomString();
   const hashedPassword = bcrypt.hashSync(password, 10);
   // Creates a new user (key) with the user's information (sub-object value.)
-  users[newUserID] = { id: newUserID, email: email, password: hashedPassword };
+  users[newUserID] = { id: newUserID, email, password: hashedPassword };
   // The session cookie's user ID is now defined as a new user's ID.
   req.session["user_id"] = newUserID;
-  // Redirects to homepage.
   res.redirect('/urls');
 });
 
@@ -96,20 +97,18 @@ app.post('/login', (req, res) => {
   const email = req.body.email;
   const password = req.body.password;
 
-  // If there is no email or password input, returns a vague error message.
   if (req.body.email === '' || req.body.password === '') {
     return res.status(400).send('Invalid input.');
   }
 
-  for (const key in users) {
-    // If the user from the helper function matches a user in the database, 
-    if (getUserByEmail(email, users) === key) {
+  for (const user in users) {
+    // If the user from the helper function matches a user in the database,
+    if (getUserByEmail(email, users) === user) {
       // That matching user is now defined as the found user.
-      foundUser = users[key];
+      foundUser = users[user];
     }
   }
 
-  // If there is no found user(null), returns a vague error message.
   if (foundUser === null) {
     return res.send('Invalid input.');
   }
@@ -129,7 +128,6 @@ app.post('/login', (req, res) => {
 app.post('/logout', (req, res) => {
   // The session cookie's user ID will be defined to null to indicate there is no currently signed in user.
   req.session = null;
-  // Once logged out, user is redirected to homepage.
   res.redirect('/urls');
 });
 
@@ -142,7 +140,6 @@ app.post('/urls/:shortURL/delete', (req, res) => {
     delete urlDatabase[req.params .shortURL];
     return res.redirect('/urls');
   } else {
-    // If not authorized, returns an unauthorized error message.
     return res.status(400).send('You are not authorized to perform this action.');
   }
 });
@@ -155,7 +152,7 @@ app.post('/urls/:shortURL', (req, res) => {
 
 // Makes a GET request to view the website of the short URL.
 app.get('/u/:shortURL', (req, res) => {
-  const longURL = urlDatabase[req.params.shortURL];
+  const longURL = urlDatabase[req.params.shortURL].longURL;
   // Redirects user to the website of the short URL.
   res.redirect(longURL);
 });
@@ -183,4 +180,4 @@ app.listen(PORT, () => {
   console.log(`Example app listening on port ${PORT}!`);
 });
 
-// --------------------------------------------------------------------
+// ------------------------------------------------------------------

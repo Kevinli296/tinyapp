@@ -1,7 +1,5 @@
 // Helper functions ------------------------------------
 /**
- * Gets a user based on an email and database input.
- *
  * @param email an email input value to check for.
  * @param db a user database that we search through.
  * @return a user that corresponds to the email input.
@@ -18,7 +16,6 @@ const getUserByEmail = (email, database) => {
 };
 
 /**
- * Generates a unique alphanumerical ID to be assigned to new users and short URLs.
  * @return a unique 6 character alphanumerical string.
  */
 
@@ -34,7 +31,6 @@ const generateRandomString = () => {
 };
 
 /**
-*
 * Generates a URLs object for the corresponding user ID to be displayed/modified on login.
 * @param id a userID to check for within urlDatabase.
 * @return a URLs object containing the URLs that correspond to the matching userID.
@@ -52,23 +48,9 @@ const urlsForUser = (id) => {
 
 // Data -------------------------------------------------
 
-const urlDatabase = {
-  b6UTxQ: { longURL: "https://www.tsn.ca", userID: "userRandomID" },
-  i3BoGr: { longURL: "https://www.google.ca", userID: "aJ48lW" }
-};
+const urlDatabase = {};
 
-const users = {
-  "userRandomID": {
-    id: "userRandomID",
-    email: "user@example.com",
-    password: "1234aa"
-  },
-  "user2RandomID": {
-    id: "user2RandomID",
-    email: "user2@example.com",
-    password: "dishwasher-funk"
-  }
-};
+const users = {};
 
 // Modules to be exported -------------------------------
 
